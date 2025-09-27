@@ -3,7 +3,6 @@ import globals from 'globals'
 import { defineConfig } from 'eslint/config'
 import stylistic from '@stylistic/eslint-plugin'
 
-
 export default defineConfig([
   stylistic.configs.recommended,
   {
@@ -13,8 +12,8 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.node,
-        ...globals.browser
-      }
+        ...globals.browser,
+      },
     },
   },
 ])
