@@ -1,0 +1,16 @@
+{
+  "app": {
+    "form": {
+      "placeholder": "RSS link",
+      "submit": "Add"
+    }
+  },
+  "status": {
+    "success": "RSS loaded successfully"
+  },
+  "errors": {
+    "required": "Must not be empty",
+    "url": "Link must be a valid URL",
+    "exists": "RSS already exists"
+  }
+}
