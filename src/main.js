@@ -8,7 +8,7 @@ initI18n()
     if (import.meta.env.DEV) {
       window.i18n = i18n
     }
-    initApp({ t: i18n.t.bind(i18n), i18n })
+    initApp()
   })
   .catch((e) => {
     console.error('i18n init failed', e)
