@@ -1,7 +1,9 @@
 import onChange from 'on-change'
 import * as yup from 'yup'
 import { i18n } from './i18n'
-import { renderForm } from './view'
+import { renderForm, renderFeeds, renderPosts } from './view'
+import { fetchFeed, parseRss } from './utils/fetchFeed'
+import { withIds } from './utils/normalize'
 
 const FORM_STATUS = { FILLING: 'filling', VALIDATING: 'validating', SUCCESS: 'success', FAILED: 'failed' }
 
@@ -13,6 +15,7 @@ export const initApp = () => {
       successKey: null,
     },
     feeds: [],
+    posts: [],
   }
 
   const form = document.querySelector('.rss-form')
@@ -22,6 +25,8 @@ export const initApp = () => {
     urlInput: document.getElementById('url-input'),
     submitButton: form.querySelector('button[type="submit"]'),
     feedback: document.querySelector('.feedback'),
+    feedsContainer: document.querySelector('.feeds'),
+    postsContainer: document.querySelector('.posts'),
   }
 
   const t = i18n.t.bind(i18n)
@@ -29,6 +34,12 @@ export const initApp = () => {
   const watchedState = onChange(state, (path) => {
     if (path.startsWith('form')) {
       renderForm(watchedState, elements, t)
+    }
+    if (path === 'feeds' || path.startsWith('feeds')) {
+      renderFeeds(watchedState.feeds, elements, t)
+    }
+    if (path === 'posts' || path.startsWith('posts')) {
+      renderPosts(watchedState.posts, elements, t)
     }
   })
 
@@ -50,7 +61,21 @@ export const initApp = () => {
 
   i18n.on('languageChanged', () => {
     renderForm(watchedState, elements, t)
+    renderFeeds(watchedState.feeds, elements, t)
+    renderPosts(watchedState.posts, elements, t)
   })
+
+  const errorToKey = (err) => {
+    if (err instanceof yup.ValidationError || err?.name === 'ValidationError') {
+      return err.message
+    }
+
+    if (err?.message === 'invalid_rss') return 'errors.parse'
+
+    if (err?.isAxiosError || err?.code === 'ERR_NETWORK') return 'errors.network'
+
+    return 'errors.unknown'
+  }
 
   form.addEventListener('submit', (e) => {
     e.preventDefault()
@@ -65,14 +90,25 @@ export const initApp = () => {
 
     validateUrl(url, existingUrls)
       .then(() => {
-        watchedState.feeds = [...watchedState.feeds, { url }]
+        watchedState.form.status = FORM_STATUS.VALIDATING
+        return fetchFeed(url)
+      })
+      .then(parseRss)
+      .then(parsed => withIds(url, parsed))
+      .then(({ feed, posts }) => {
+        console.log('FEED:', feed)
+        console.log('POSTS COUNT:', posts.length)
+
+        watchedState.feeds.push(feed)
+        watchedState.posts.push(...posts)
         watchedState.form.status = FORM_STATUS.SUCCESS
         watchedState.form.error = null
         watchedState.form.successKey = 'status.success'
+        elements.urlInput.focus()
       })
       .catch((err) => {
-        watchedState.form.error = err.message
         watchedState.form.status = FORM_STATUS.FAILED
+        watchedState.form.error = errorToKey(err)
       })
   })
 
@@ -85,4 +121,15 @@ export const initApp = () => {
   })
 
   renderForm(watchedState, elements, t)
+
+  fetchFeed('https://lorem-rss.hexlet.app/feed')
+    .then(parseRss)
+    .then(({ feed, posts }) => {
+      console.log('feed:', feed)
+      console.log('posts count:', posts.length)
+      console.log('first post:', posts[0])
+    })
+    .catch((err) => {
+      console.error(err)
+    })
 }

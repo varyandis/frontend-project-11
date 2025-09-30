@@ -6,11 +6,21 @@
     }
   },
   "status": {
-    "success": "RSS loaded successfully"
+    "success": "RSS loaded successfully",
+    "loading": "Loading…"
   },
   "errors": {
     "required": "Must not be empty",
     "url": "Link must be a valid URL",
-    "exists": "RSS already exists"
+    "exists": "RSS already exists",
+    "parse": "The resource does not contain valid RSS",
+    "network": "Network error. Check your connection",
+    "unknown": "Unknown error. Please try again"
+  },
+  "feeds": {
+    "title": "Feeds"
+  },
+  "posts": {
+    "title": "Posts"
   }
 }
