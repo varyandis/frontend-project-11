@@ -4,6 +4,7 @@ import { i18n } from './i18n'
 import { renderForm, renderFeeds, renderPosts } from './view'
 import { fetchFeed, parseRss } from './utils/fetchFeed'
 import { withIds } from './utils/normalize'
+import { scheduleUpdateLoop } from './utils/update'
 
 const FORM_STATUS = { FILLING: 'filling', VALIDATING: 'validating', SUCCESS: 'success', FAILED: 'failed' }
 
@@ -121,6 +122,9 @@ export const initApp = () => {
   })
 
   renderForm(watchedState, elements, t)
+
+  const stopPolling = scheduleUpdateLoop(watchedState, { intervalMs: 5000, jitterMs: 300 })
+  watchedState.runtime = { stopPolling }
 
   fetchFeed('https://lorem-rss.hexlet.app/feed')
     .then(parseRss)

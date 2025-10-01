@@ -1,5 +1,5 @@
-export const withIds = (url, { feed, posts }) => {
-  const feedId = crypto.randomUUID()
+export const withIds = (url, { feed, posts }, existingFeedId = null) => {
+  const feedId = existingFeedId ?? crypto.randomUUID()
 
   return {
     feed: {
