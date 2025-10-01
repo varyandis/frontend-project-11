@@ -92,7 +92,7 @@ export const renderFeeds = (feeds, elements, t) => {
   feedsContainer.append(card)
 }
 
-export const renderPosts = (posts, elements, t) => {
+export const renderPosts = (posts, elements, t, readPostIds = new Set()) => {
   const { postsContainer } = elements
   postsContainer.innerHTML = ''
   if (posts.length === 0) return
@@ -111,23 +111,46 @@ export const renderPosts = (posts, elements, t) => {
   card.append(cardBody)
 
   const ul = document.createElement('ul')
-  ul.className = 'list-group list-group-flush'
+  ul.className = 'list-group border-0 rounded-0'
 
   posts.forEach((post) => {
     const li = document.createElement('li')
-    li.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0'
+    li.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0 border-start-0'
+
+    const isRead = readPostIds.has(post.id)
 
     const a = document.createElement('a')
     a.href = post.link
     a.target = '_blank'
     a.rel = 'noopener noreferrer'
-    a.className = 'fw-bold'
+    a.className = isRead ? 'fw-normal' : 'fw-bold'
     a.textContent = post.title
+    a.dataset.id = post.id
 
-    li.append(a)
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'btn btn-outline-primary btn-sm'
+    btn.dataset.role = 'preview'
+    btn.dataset.id = post.id
+    btn.setAttribute('data-bs-toggle', 'modal')
+    btn.setAttribute('data-bs-target', '#modal')
+    btn.textContent = t('posts.preview')
+
+    li.append(a, btn)
     ul.append(li)
   })
 
   card.append(ul)
   postsContainer.append(card)
+}
+
+export const renderModal = (state, elements) => {
+  const id = state.ui.modal.postId
+  if (!id) return
+  const post = state.posts.find(p => p.id === id)
+  if (!post) return
+
+  elements.modalTitle.textContent = post.title
+  elements.modalBody.textContent = post.description ?? ''
+  elements.modalLink.href = post.link
 }

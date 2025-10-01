@@ -1,7 +1,7 @@
 import onChange from 'on-change'
 import * as yup from 'yup'
 import { i18n } from './i18n'
-import { renderForm, renderFeeds, renderPosts } from './view'
+import { renderForm, renderFeeds, renderPosts, renderModal } from './view'
 import { fetchFeed, parseRss } from './utils/fetchFeed'
 import { withIds } from './utils/normalize'
 import { scheduleUpdateLoop } from './utils/update'
@@ -17,6 +17,10 @@ export const initApp = () => {
     },
     feeds: [],
     posts: [],
+    ui: {
+      modal: { postId: null },
+      readPostIds: new Set(),
+    },
   }
 
   const form = document.querySelector('.rss-form')
@@ -28,6 +32,10 @@ export const initApp = () => {
     feedback: document.querySelector('.feedback'),
     feedsContainer: document.querySelector('.feeds'),
     postsContainer: document.querySelector('.posts'),
+    modal: document.getElementById('modal'),
+    modalTitle: document.querySelector('#modal .modal-title'),
+    modalBody: document.querySelector('#modal .modal-body'),
+    modalLink: document.querySelector('#modal .full-article'),
   }
 
   const t = i18n.t.bind(i18n)
@@ -39,8 +47,11 @@ export const initApp = () => {
     if (path === 'feeds' || path.startsWith('feeds')) {
       renderFeeds(watchedState.feeds, elements, t)
     }
-    if (path === 'posts' || path.startsWith('posts')) {
-      renderPosts(watchedState.posts, elements, t)
+    if (
+      path === 'posts' || path.startsWith('posts') || path === 'ui.readPostIds' || path === 'ui.modal.postId'
+    ) {
+      renderPosts(watchedState.posts, elements, t, watchedState.ui.readPostIds)
+      renderModal(watchedState, elements, t)
     }
   })
 
@@ -63,7 +74,7 @@ export const initApp = () => {
   i18n.on('languageChanged', () => {
     renderForm(watchedState, elements, t)
     renderFeeds(watchedState.feeds, elements, t)
-    renderPosts(watchedState.posts, elements, t)
+    renderPosts(watchedState.posts, elements, t, watchedState.ui.readPostIds)
   })
 
   const errorToKey = (err) => {
@@ -122,6 +133,27 @@ export const initApp = () => {
   })
 
   renderForm(watchedState, elements, t)
+
+  elements.postsContainer.addEventListener('click', (e) => {
+    const link = e.target.closest('a[data-id]')
+    if (!link) return
+    const postId = link.dataset.id
+    const next = new Set(watchedState.ui.readPostIds)
+    next.add(postId)
+    watchedState.ui.readPostIds = next
+  })
+
+  elements.postsContainer.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-role="preview"]')
+    if (!btn) return
+    const postId = btn.dataset.id
+
+    const next = new Set(watchedState.ui.readPostIds)
+    next.add(postId)
+    watchedState.ui.readPostIds = next
+
+    watchedState.ui.modal.postId = postId
+  })
 
   const stopPolling = scheduleUpdateLoop(watchedState, { intervalMs: 5000, jitterMs: 300 })
   watchedState.runtime = { stopPolling }
